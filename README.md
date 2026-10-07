@@ -11,7 +11,7 @@
 * **Team Members:**
   1. Lê Hoàng Vũ — Student ID: 23IT.B249 — Role: Full-stack Developer / Architecture & Logic — Contribution: 100%
 * **🔗 Live Demo URL:** [Dán link Cloudflare Pages vào đây, ví dụ: https://vku-field-survey.pages.dev]
-* **💻 GitHub Repository:** [Dán link GitHub repo vào đây, ví dụ: https://github.com/username/vku-field-survey]
+* **💻 GitHub Repository:** [Dán link GitHub repo vào đây, ví dụ: https://github.com/vule0309/vku-field-survey
 
 ---
 
@@ -37,8 +37,6 @@ Project 1/
 ├── public/
 │   ├── manifest.json         # PWA Manifest: standalone, theme_color #0284c7, icons
 │   ├── sw.js                 # Service Worker: Cache-First, Background Sync, Mock API
-│   ├── _redirects            # Cấu hình định tuyến SPA cho Cloudflare Pages
-│   ├── _headers              # Cấu hình Cache-Control cho Service Worker & Manifest
 │   └── icons/
 │       ├── icon-192.png      # Biểu tượng 192x192
 │       └── icon-512.png      # Biểu tượng 512x512
