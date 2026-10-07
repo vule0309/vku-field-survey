@@ -10,7 +10,7 @@
 ## 1. GENERAL INFORMATION & DELIVERABLE LINKS
 * **Team Members:**
   1. Lê Hoàng Vũ — Student ID: 23IT.B249 — Role: Full-stack Developer / Architecture & Logic — Contribution: 100%
-* **🔗 Live Demo URL:** [Dán link Cloudflare Pages vào đây, ví dụ: https://vku-field-survey.pages.dev]
+* **🔗 Live Demo URL:** https://vku-field-survey.vule0709.workers.dev/
 * **💻 GitHub Repository:** [Dán link GitHub repo vào đây, ví dụ: https://github.com/vule0309/vku-field-survey
 
 ---
