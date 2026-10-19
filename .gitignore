@@ -7,18 +7,39 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies & Web Build
 node_modules
 dist
 dist-ssr
 *.local
+.wrangler
 
-# Editor directories and files
+# Editor & OS Temporary Files
 .vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
+Thumbs.db
+Desktop.ini
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# Android Native Build & Local Configurations
+android/.gradle
+android/build
+android/app/build
+android/local.properties
+android/**/.cxx
+android/.idea
+android/*.iml
+android/app/*.iml
+android/app/src/main/assets/public
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+
+# Compiled Android Binaries (Distributed via GitHub Releases)
+*.apk
+*.aab

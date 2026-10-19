@@ -12,6 +12,7 @@ export interface SurveyDraft {
   rating: number; // 1 to 5
   notes: string;
   photo?: string; // Base64 data URL
+  gps?: { latitude: number; longitude: number; accuracy?: number };
   currentStep: number; // 1, 2, or 3
   updatedAt: string;
 }
@@ -25,6 +26,7 @@ export interface SurveyRecord {
   rating: number; // 1-5
   notes: string;
   photo?: string;
+  gps?: { latitude: number; longitude: number; accuracy?: number };
   createdAt: string; // ISO String
   status: SurveyStatus;
   syncedAt?: string;

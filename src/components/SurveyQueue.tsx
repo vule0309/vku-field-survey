@@ -15,6 +15,7 @@ import {
   Armchair,
   Filter,
   Plus,
+  Navigation,
 } from 'lucide-react';
 import type { SurveyRecord, SurveyCategory } from '../types/survey';
 import { deleteSurvey } from '../services/db';
@@ -293,6 +294,15 @@ export const SurveyQueue: React.FC<SurveyQueueProps> = ({
                         <span className="text-[11px] text-slate-400">
                           Tạo: {new Date(survey.createdAt).toLocaleString('vi-VN')}
                         </span>
+                        {survey.gps && (
+                          <>
+                            <span>•</span>
+                            <span className="text-[11px] text-emerald-700 font-mono font-medium flex items-center gap-0.5">
+                              <Navigation className="w-3 h-3 text-sky-600" />
+                              {survey.gps.latitude}, {survey.gps.longitude}
+                            </span>
+                          </>
+                        )}
                       </div>
 
                       {/* Defect Notes */}
@@ -433,6 +443,11 @@ export const SurveyQueue: React.FC<SurveyQueueProps> = ({
               <div>Tạo lúc: {selectedSurvey.createdAt}</div>
               {selectedSurvey.syncedAt && (
                 <div>Đồng bộ lúc: <span className="text-emerald-400">{selectedSurvey.syncedAt}</span></div>
+              )}
+              {selectedSurvey.gps && (
+                <div className="text-emerald-400">
+                  GPS: {selectedSurvey.gps.latitude}, {selectedSurvey.gps.longitude} {selectedSurvey.gps.accuracy ? `(±${selectedSurvey.gps.accuracy}m)` : ''}
+                </div>
               )}
             </div>
 

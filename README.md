@@ -10,8 +10,9 @@
 ## 1. GENERAL INFORMATION & DELIVERABLE LINKS
 * **Team Members:**
   1. Lê Hoàng Vũ — Student ID: 23IT.B249 — Role: Full-stack Developer / Architecture & Logic — Contribution: 100%
-* **🔗 Live Demo URL:** https://vku-field-survey-chb.pages.dev/
-* **💻 GitHub Repository:** [Dán link GitHub repo vào đây, ví dụ: https://github.com/vule0309/vku-field-survey
+* **🔗 Live Demo PWA URL:** https://vku-field-survey-chb.pages.dev/
+* **📱 Tải Android APK (GitHub Releases):** https://github.com/vule0309/vku-field-survey/releases/latest
+* **💻 GitHub Repository:** https://github.com/vule0309/vku-field-survey
 
 ---
 
@@ -26,6 +27,10 @@
 | **5** | **Offline Submission Queue** | ✅ Complete | Khi gửi không có mạng, bản ghi được cấp **UUID** (`crypto.randomUUID()`), nhãn thời gian ISO timestamp và lưu vào IndexedDB với trạng thái **`PENDING_SYNC`** (⏳ Chờ gửi). |
 | **6** | **Automatic Sequential Sync** | ✅ Complete | Lắng nghe sự kiện `window.ononline` và Background Sync API (`sync-surveys`). Khi có mạng trở lại, hệ thống tự động đồng bộ **tuần tự (Sequential FIFO)** từng khảo sát một kèm thanh tiến trình và chuyển sang `SYNCED` (✓ Đã gửi). |
 | **7** | **Camera Evidence & Compression** | ✅ Complete | Tích hợp chụp ảnh hiện trường qua `<input capture="environment">`. Tự động nén ảnh qua HTML5 Canvas (max 1024px, quality 0.75) giúp tối ưu dung lượng IndexedDB và giảm độ trễ khi đồng bộ. |
+| **8** | **Capacitor Native APK Compilation** | ✅ Complete | Đóng gói toàn bộ ứng dụng PWA vào ứng dụng Native Android bằng **Capacitor 8 Bridge** (`vn.edu.vku.survey`). Đã biên dịch thành công tệp cài đặt `app-debug.apk` và `vku-field-survey.apk`. |
+| **9** | **Native Camera Plugin (@capacitor/camera)** | ✅ Complete | Tích hợp `@capacitor/camera` cho phép chụp ảnh trực tiếp từ camera native của thiết bị hoặc chọn từ thư viện ảnh Android, tự động fallback sang Web File Picker khi chạy trên trình duyệt. |
+| **10** | **Native Network Plugin (@capacitor/network)** | ✅ Complete | Lắng nghe trạng thái kết nối mạng của hệ điều hành Android thời gian thực thông qua `@capacitor/network`, kích hoạt auto-sync tức thì khi thiết bị bắt lại sóng Wi-Fi/4G. |
+| **11** | **Native Geolocation / GPS (@capacitor/geolocation)** | ✅ Complete | Tích hợp `@capacitor/geolocation` để thu thập tọa độ GPS kinh độ/vĩ độ (Latitude, Longitude, Accuracy) của vị trí phòng học cần kiểm định thực địa. |
 
 ---
 
@@ -48,16 +53,23 @@ Project 1/
 │   ├── services/
 │   │   ├── db.ts             # Thao tác IndexedDB bằng 'idb' (Stores: draft, surveys, server_logs)
 │   │   ├── sync.ts           # Xử lý đồng bộ tuần tự (Sequential FIFO) & background sync
-│   │   └── sw-register.ts    # Đăng ký Service Worker, bắt online/offline, beforeinstallprompt
+│   │   ├── sw-register.ts    # Đăng ký Service Worker, bắt online/offline, beforeinstallprompt
+│   │   └── native.ts         # Capacitor Native Bridge: Camera, Geolocation, Network
 │   ├── types/
-│   │   └── survey.ts         # TypeScript models (SurveyDraft, SurveyRecord, Category, Status)
+│   │   └── survey.ts         # TypeScript models (SurveyDraft, SurveyRecord, GPSLocation)
 │   ├── utils/
 │   │   └── image.ts          # Nén ảnh hiện trường qua HTML5 Canvas sang Base64
 │   ├── App.tsx               # Root component điều phối luồng dữ liệu & trạng thái mạng
 │   ├── main.tsx              # React DOM entry point
 │   └── index.css             # Tailwind CSS & theme styling
-├── scripts/
-│   └── generate-icons.js     # Script tạo bộ icon PWA tự động bằng Node.js zlib
+├── android/                  # Dự án Native Android Gradle sinh bởi Capacitor
+│   ├── app/src/main/
+│   │   ├── AndroidManifest.xml # Cấu hình quyền: Camera, Storage, GPS, Network
+│   │   ├── res/mipmap-*/     # Bộ icon ứng dụng VKU Launcher
+│   │   └── assets/public/    # Bản build web phân phối trong APK
+│   └── build/outputs/apk/    # Nơi chứa app-debug.apk đã biên dịch
+├── capacitor.config.ts       # Cấu hình Capacitor (AppId: vn.edu.vku.survey)
+├── vku-field-survey.apk      # Tệp APK cài đặt trực tiếp trên Android (~8.4 MB)
 ├── package.json
 └── vite.config.ts
 ```
@@ -158,3 +170,42 @@ npm run preview
 Mở trình duyệt truy cập: `http://localhost:4173`
 
 ---
+
+## 📱 BIÊN DỊCH VÀ CÀI ĐẶT NATIVE ANDROID APK (CAPACITOR)
+
+Dự án đã được tích hợp hoàn chỉnh với **Capacitor 8** để đóng gói PWA thành ứng dụng Native Android (`vn.edu.vku.survey`).
+
+### 1. Tải và cài đặt tệp APK đã biên dịch sẵn
+Tệp APK đã được biên dịch hoàn chỉnh và sẵn sàng để cài đặt trực tiếp trên các thiết bị Android:
+* **Tải trực tiếp qua GitHub Releases:** [vku-field-survey.apk (v1.0.0)](https://github.com/vule0309/vku-field-survey/releases/latest) *(Khuyên dùng)*
+* **Tệp APK cục bộ trên máy:** `vku-field-survey.apk` *(ở thư mục gốc dự án)* hoặc `android/app/build/outputs/apk/debug/app-debug.apk` *(~8.4 MB)*
+
+### 2. Các lệnh quản lý và biên dịch APK
+* **Đồng bộ mã nguồn web sang Android:**
+  ```bash
+  npm run cap:sync
+  ```
+* **Mở dự án trong Android Studio:**
+  ```bash
+  npm run cap:open
+  ```
+* **Biên dịch APK hoàn chỉnh từ đầu:**
+  ```powershell
+  # Đặt biến môi trường JDK 21 và Android SDK (trên PowerShell)
+  $env:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot"
+  $env:ANDROID_HOME = "C:\Users\Dell\AppData\Local\Android\Sdk"
+  npm run build:apk
+  ```
+
+### 3. Cài đặt APK lên thiết bị hoặc máy ảo Android
+* **Cách 1: Cài trực tiếp qua ADB (kết nối cáp USB hoặc Wi-Fi ADB):**
+  ```bash
+  adb install -r vku-field-survey.apk
+  ```
+* **Cách 2: Cài thủ công trên điện thoại:**
+  1. Chuyển tệp `vku-field-survey.apk` vào bộ nhớ điện thoại (qua Zalo, Google Drive hoặc chép trực tiếp).
+  2. Mở tệp APK trên điện thoại và chọn **Cài đặt** (Bật "Cho phép cài đặt từ nguồn này" nếu được yêu cầu).
+  3. Mở ứng dụng **VKU Field Survey** và cấp quyền Camera & Vị trí (GPS) khi được nhắc.
+
+---
+

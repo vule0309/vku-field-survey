@@ -16,11 +16,14 @@ import {
   RotateCcw,
   Sparkles,
   CloudUpload,
+  Navigation,
+  Loader2,
 } from 'lucide-react';
 import type { SurveyCategory, SurveyDraft, SurveyRecord } from '../types/survey';
 import { saveDraft, getDraft, clearDraft, saveSurvey } from '../services/db';
 import { fileToCompressedBase64 } from '../utils/image';
 import { syncPendingSurveys } from '../services/sync';
+import { takeNativePhoto, getNativeLocation } from '../services/native';
 
 interface SurveyFormProps {
   isOnline: boolean;
@@ -59,6 +62,8 @@ export const SurveyForm: React.FC<SurveyFormProps> = ({
   const [rating, setRating] = useState<number>(2);
   const [notes, setNotes] = useState<string>('Cáp HDMI chập chờn, máy chiếu nhấp nháy');
   const [photo, setPhoto] = useState<string>('');
+  const [gps, setGps] = useState<{ latitude: number; longitude: number; accuracy?: number } | undefined>(undefined);
+  const [isGettingGps, setIsGettingGps] = useState<boolean>(false);
   const [draftRestored, setDraftRestored] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [lastSavedTime, setLastSavedTime] = useState<string>('');
@@ -79,6 +84,7 @@ export const SurveyForm: React.FC<SurveyFormProps> = ({
         if (draft.rating) setRating(draft.rating);
         if (draft.notes) setNotes(draft.notes);
         if (draft.photo) setPhoto(draft.photo);
+        if (draft.gps) setGps(draft.gps);
         if (draft.currentStep) setCurrentStep(draft.currentStep);
         setDraftRestored(true);
         setLastSavedTime(new Date(draft.updatedAt).toLocaleTimeString('vi-VN'));
@@ -101,6 +107,7 @@ export const SurveyForm: React.FC<SurveyFormProps> = ({
         rating,
         notes,
         photo,
+        gps,
         currentStep,
         updatedAt: now.toISOString(),
       };
@@ -109,9 +116,22 @@ export const SurveyForm: React.FC<SurveyFormProps> = ({
     }, 300); // 300ms debounce
 
     return () => clearTimeout(timer);
-  }, [building, floor, room, category, rating, notes, photo, currentStep]);
+  }, [building, floor, room, category, rating, notes, photo, gps, currentStep]);
 
-  // Handle Photo input / camera capture
+  // Handle Photo capture via Capacitor Camera (with Web file input fallback)
+  const handleTriggerPhoto = async () => {
+    try {
+      const nativePhoto = await takeNativePhoto();
+      if (nativePhoto) {
+        setPhoto(nativePhoto);
+        return;
+      }
+    } catch (err) {
+      console.warn('[Camera] Fallback to web file picker:', err);
+      fileInputRef.current?.click();
+    }
+  };
+
   const handlePhotoCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -125,6 +145,21 @@ export const SurveyForm: React.FC<SurveyFormProps> = ({
     }
   };
 
+  // Handle Geolocation capture via Capacitor Geolocation
+  const handleGetLocation = async () => {
+    setIsGettingGps(true);
+    try {
+      const loc = await getNativeLocation();
+      if (loc) {
+        setGps(loc);
+      } else {
+        alert('Không thể lấy tọa độ GPS. Vui lòng bật định vị vị trí (Location) trên thiết bị.');
+      }
+    } finally {
+      setIsGettingGps(false);
+    }
+  };
+
   const handleClearDraft = async () => {
     if (confirm('Bạn có chắc chắn muốn xóa bản nháp hiện tại và nhập lại từ đầu?')) {
       await clearDraft();
@@ -135,6 +170,7 @@ export const SurveyForm: React.FC<SurveyFormProps> = ({
       setRating(3);
       setNotes('');
       setPhoto('');
+      setGps(undefined);
       setCurrentStep(1);
       setDraftRestored(false);
     }
@@ -166,6 +202,7 @@ export const SurveyForm: React.FC<SurveyFormProps> = ({
         rating,
         notes,
         photo,
+        gps,
         createdAt: new Date().toISOString(),
         status: 'PENDING_SYNC', // Always start as PENDING_SYNC in local IndexedDB
       };
@@ -194,6 +231,7 @@ export const SurveyForm: React.FC<SurveyFormProps> = ({
       setRoom('');
       setNotes('');
       setPhoto('');
+      setGps(undefined);
       setRating(3);
       setCurrentStep(1);
       onSurveySubmitted();
@@ -456,6 +494,44 @@ export const SurveyForm: React.FC<SurveyFormProps> = ({
             </p>
           </div>
 
+          {/* GPS Coordinates (Capacitor Geolocation) */}
+          <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+            <div>
+              <div className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <Navigation className="w-3.5 h-3.5 text-sky-600" />
+                <span>Tọa độ GPS hiện trường (@capacitor/geolocation)</span>
+              </div>
+              <div className="text-[11px] text-slate-500 mt-0.5">
+                {gps ? (
+                  <span className="font-mono text-emerald-700 font-semibold">
+                    📍 {gps.latitude}, {gps.longitude} {gps.accuracy ? `(±${gps.accuracy}m)` : ''}
+                  </span>
+                ) : (
+                  <span>Chưa xác định tọa độ GPS</span>
+                )}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleGetLocation}
+              disabled={isGettingGps}
+              className="px-3 py-1.5 text-xs font-semibold bg-white border border-slate-200 hover:border-sky-400 hover:text-sky-700 rounded-lg text-slate-700 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              {isGettingGps ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-600" />
+                  <span>Đang định vị...</span>
+                </>
+              ) : (
+                <>
+                  <Navigation className="w-3.5 h-3.5 text-sky-600" />
+                  <span>{gps ? 'Cập nhật GPS' : 'Lấy tọa độ GPS'}</span>
+                </>
+              )}
+            </button>
+          </div>
+
           {/* Navigation */}
           <div className="pt-4 border-t border-slate-100 flex justify-end">
             <button
@@ -651,8 +727,8 @@ export const SurveyForm: React.FC<SurveyFormProps> = ({
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
                   <button
                     type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="px-3.5 py-2 bg-white/90 hover:bg-white text-slate-800 text-xs font-semibold rounded-xl shadow-lg transition-all flex items-center gap-1.5"
+                    onClick={handleTriggerPhoto}
+                    className="px-3.5 py-2 bg-white/90 hover:bg-white text-slate-800 text-xs font-semibold rounded-xl shadow-lg transition-all flex items-center gap-1.5 cursor-pointer"
                   >
                     <Camera className="w-4 h-4" />
                     Chụp lại
@@ -660,7 +736,7 @@ export const SurveyForm: React.FC<SurveyFormProps> = ({
                   <button
                     type="button"
                     onClick={() => setPhoto('')}
-                    className="px-3.5 py-2 bg-rose-600/90 hover:bg-rose-600 text-white text-xs font-semibold rounded-xl shadow-lg transition-all flex items-center gap-1.5"
+                    className="px-3.5 py-2 bg-rose-600/90 hover:bg-rose-600 text-white text-xs font-semibold rounded-xl shadow-lg transition-all flex items-center gap-1.5 cursor-pointer"
                   >
                     <Trash2 className="w-4 h-4" />
                     Xóa ảnh
@@ -672,20 +748,20 @@ export const SurveyForm: React.FC<SurveyFormProps> = ({
               </div>
             ) : (
               <div
-                onClick={() => fileInputRef.current?.click()}
+                onClick={handleTriggerPhoto}
                 className="border-2 border-dashed border-slate-300 hover:border-sky-500 bg-slate-50 hover:bg-sky-50/50 rounded-2xl p-8 text-center cursor-pointer transition-all"
               >
                 <div className="w-14 h-14 bg-sky-100 text-sky-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-xs">
                   <Camera className="w-7 h-7" />
                 </div>
                 <div className="text-sm font-bold text-slate-700">
-                  Nhấn để Chụp ảnh hoặc Tải ảnh lên
+                  Nhấn để Chụp ảnh (@capacitor/camera)
                 </div>
                 <p className="text-xs text-slate-500 mt-1">
-                  Hỗ trợ Camera trực tiếp từ điện thoại hoặc chọn ảnh từ thư viện
+                  Mở trực tiếp Camera điện thoại hoặc chọn ảnh từ thư viện
                 </p>
                 <span className="inline-block mt-3 px-3 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-600 shadow-2xs">
-                  Mở Máy ảnh
+                  Mở Máy ảnh Native
                 </span>
               </div>
             )}
@@ -715,6 +791,18 @@ export const SurveyForm: React.FC<SurveyFormProps> = ({
                 <span className="font-bold text-amber-600">{rating} / 5 ⭐</span>
               </div>
             </div>
+
+            {gps && (
+              <div className="bg-white p-3 rounded-xl border border-slate-100 text-xs flex items-center justify-between">
+                <span className="text-slate-400 font-medium flex items-center gap-1.5">
+                  <Navigation className="w-3.5 h-3.5 text-sky-600" />
+                  Tọa độ GPS:
+                </span>
+                <span className="font-mono text-emerald-700 font-semibold">
+                  📍 {gps.latitude}, {gps.longitude} {gps.accuracy ? `(±${gps.accuracy}m)` : ''}
+                </span>
+              </div>
+            )}
 
             {notes && (
               <div className="bg-white p-3 rounded-xl border border-slate-100 text-xs">

@@ -6,6 +6,7 @@ import { getAllSurveys } from './services/db';
 import type { SurveyRecord } from './types/survey';
 import { registerServiceWorker } from './services/sw-register';
 import { syncPendingSurveys } from './services/sync';
+import { initNativeNetworkListener } from './services/native';
 import { WifiOff } from 'lucide-react';
 
 export function App() {
@@ -25,13 +26,26 @@ export function App() {
     }
   }, []);
 
-  // Initialize Service Worker and global event listeners
+  // Initialize Service Worker, Capacitor Network listener, and global event listeners
   useEffect(() => {
     // Register Cache-First Service Worker
     registerServiceWorker();
 
     // Initial data load
     refreshSurveys();
+
+    // Initialize Native @capacitor/network monitoring (with web fallback)
+    let networkCleanup: (() => void) | null = null;
+    initNativeNetworkListener((connected) => {
+      setIsOnline(connected);
+      if (connected) {
+        syncPendingSurveys().then(() => {
+          refreshSurveys();
+        });
+      }
+    }).then((handle) => {
+      networkCleanup = handle.remove;
+    });
 
     const handleOnline = () => {
       setIsOnline(true);
@@ -54,6 +68,7 @@ export function App() {
     window.addEventListener('vku-surveys-updated', handleSurveysUpdated);
 
     return () => {
+      if (networkCleanup) networkCleanup();
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
       window.removeEventListener('vku-surveys-updated', handleSurveysUpdated);
