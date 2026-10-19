@@ -11,7 +11,7 @@
 * **Team Members:**
   1. Lê Hoàng Vũ — Student ID: 23IT.B249 — Role: Full-stack Developer / Architecture & Logic — Contribution: 100%
 * **🔗 Live Demo PWA URL:** https://vku-field-survey-chb.pages.dev/
-* **📱 Tải Android APK (GitHub Releases):** https://github.com/vule0309/vku-field-survey/releases/latest
+* **📱 Tải Android APK (GitHub Releases):** https://github.com/vule0309/vku-field-survey/releases/download/v1.0.0/vku-field-survey.apk
 * **💻 GitHub Repository:** https://github.com/vule0309/vku-field-survey
 
 ---
